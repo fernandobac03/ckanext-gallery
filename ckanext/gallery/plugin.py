@@ -11,6 +11,7 @@ from pylons import config
 import ckan.lib.helpers as h
 from ckan.common import json, request, _, response
 from pylons import url as _pylons_default_url
+import json
 
 get_action = logic.get_action
 
@@ -45,7 +46,11 @@ def is_string_field(datastore_fields):
     :type possible_values: function
     '''
     def validate(key, data, errors, context):
-        raise Invalid('"{0}" is not a string field'.format(data[key]))
+        pass
+
+        # print datastore_fields
+        #
+        # raise Invalid('"{0}" is not a string field'.format(data[key]))
 
     return validate
 
@@ -131,7 +136,7 @@ class GalleryPlugin(p.SingletonPlugin):
         self.datastore_fields = self._get_datastore_fields(data_dict['resource']['id'])
 
         field_separator = config.get("ckanext.gallery.field_separator", ';')
-        records_per_page = config.get("ckanext.gallery.records_per_page", 30)
+        records_per_page = config.get("ckanext.gallery.records_per_page", 200)
 
         current_page = request.params.get('page', 1)
 
@@ -148,6 +153,12 @@ class GalleryPlugin(p.SingletonPlugin):
 
         # Only try and load images, if an image field has been selected
         if image_field:
+
+            # # Get field type
+            # for datastore_field in self.datastore_fields:
+            #     if datastore_field['id'] == image_field:
+            #         field_type = datastore_field['type']
+            #         break
 
             offset = (int(current_page) - 1) * records_per_page
 
@@ -187,43 +198,50 @@ class GalleryPlugin(p.SingletonPlugin):
             for record in data['records']:
 
                 try:
-                    images = record.get(image_field, None).split(field_separator)
+                    images = record.get(image_field, None)
                 except AttributeError:
                     pass
                 else:
                     # Only add if we have an image
                     if images:
 
-                        gallery_title = record.get(gallery_title_field, None)
-                        modal_title = record.get(modal_title_field, None)
-                        thumbnails = record.get(thumbnail_field, None).split(field_separator)
+                        # print field_type
+                        # print images[0]
+                        try:
+                            images = json.loads(images)
+                        except ValueError:
+                            print images
+                        else:
 
-                        for i, image in enumerate(images):
 
-                            image = image.strip()
 
-                            if thumbnails:
-                                try:
-                                    thumbnail = thumbnails[i]
-                                except IndexError:
-                                    # If we don't have a thumbnail with the same index
-                                    # Use the first thumbnail image
-                                    thumbnail = thumbnails[0]
+                            for i, image in enumerate(images):
 
-                                thumbnail = thumbnail.strip()
+                                image = image['identifier'].strip()
 
-                                # If we have thumbnail params, add them here
-                                if thumbnail_params:
-                                    q = '&' if '?' in thumbnail else '?'
-                                    thumbnail += q + thumbnail_params
+                                thumbnail = re.sub(r'(width=[0-9]+&height=[0-9]+)', 'width=100&height=100', image)
+                                # if thumbnails:
+                                #     try:
+                                #         thumbnail = thumbnails[i]
+                                #     except IndexError:
+                                #         # If we don't have a thumbnail with the same index
+                                #         # Use the first thumbnail image
+                                #         thumbnail = thumbnails[0]
+                                #
+                                #     thumbnail = thumbnail.strip()
+                                #
+                                #     # If we have thumbnail params, add them here
+                                #     if thumbnail_params:
+                                #         q = '&' if '?' in thumbnail else '?'
+                                #         thumbnail += q + thumbnail_params
 
-                            image_list.append({
-                                'url': image,
-                                'thumbnail': thumbnail,
-                                'gallery_title': gallery_title,
-                                'modal_title': modal_title,
-                                'record_id': record['_id']
-                            })
+                                image_list.append({
+                                    'url': image,
+                                    'thumbnail': thumbnail,
+                                    'gallery_title': '',
+                                    'modal_title': record['_id'],
+                                    'record_id': record['_id']
+                                })
 
         page_params = {
             'collection':records,
