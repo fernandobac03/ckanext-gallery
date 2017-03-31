@@ -64,11 +64,11 @@ class GalleryPlugin(p.SingletonPlugin):
 
     def view_template(self, context, data_dict):
        """ return 'gallery/view.html'"""
-           return 'view.html'
+        return 'view.html'
 
     def form_template(self, context, data_dict):
         """return 'gallery/form.html' """
-           return 'form.html'
+        return 'form.html'
 
     def can_view(self, data_dict):
         """Specify which resources can be viewed by this plugin"""
