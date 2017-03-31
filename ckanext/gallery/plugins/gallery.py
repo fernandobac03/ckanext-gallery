@@ -63,11 +63,9 @@ class GalleryPlugin(p.SingletonPlugin):
         return data_dict
 
     def view_template(self, context, data_dict):
-       """ return 'gallery/view.html'"""
         return 'view.html'
 
     def form_template(self, context, data_dict):
-        """return 'gallery/form.html' """
         return 'form.html'
 
     def can_view(self, data_dict):
